@@ -26,6 +26,9 @@ def insert_many(model, objects, using="default"):
     raised.
 
     """
+    if not objects:
+        return
+
     con = connections[using]
 
     fields = _model_fields(model)
@@ -46,6 +49,9 @@ def update_many(model, objects, keys=None, using="default"):
     raised.
 
     """
+    if not objects:
+        return
+
     # If no keys specified, use the primary key by default
     keys = keys or [model._meta.pk.name]
 
@@ -79,6 +85,9 @@ def insert_or_update_many(model, objects, keys=None, using="default"):
     Does not work with SQLite as it does not support tuple comparison.
 
     '''
+    if not objects:
+        return
+
     keys = keys or [model._meta.pk.name]
     con = connections[using]
 
