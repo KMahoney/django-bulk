@@ -6,7 +6,7 @@ Originally from http://people.iola.dk/olau/python/bulkops.py
 
 '''
 from itertools import repeat
-from django.db import models, connections
+from django.db import models, connections, transaction
 
 
 def _model_fields(model):
@@ -19,7 +19,7 @@ def _prep_values(fields, obj, con):
                  for f in fields)
 
 
-def insert_many(model, objects, using="default"):
+def _insert_many(model, objects, using="default"):
     """
     Insert list of Django objects in one SQL query. Objects must be of the same
     Django model. Note that save is not called and signals on the model are not
@@ -42,7 +42,12 @@ def insert_many(model, objects, using="default"):
     con.cursor().executemany(sql, parameters)
 
 
-def update_many(model, objects, keys=None, using="default"):
+def insert_many(*args, **kwargs):
+    _insert_many(*args, **kwargs)
+    transaction.commit_unless_managed()
+
+
+def _update_many(model, objects, keys=None, using="default"):
     """
     Update list of Django objects in one SQL query. Objects must be of the same
     Django model. Note that save is not called and signals on the model are not
@@ -76,6 +81,11 @@ def update_many(model, objects, keys=None, using="default"):
                               for f in key_fields)
     sql = "UPDATE %s SET %s WHERE %s" % (table, assignments, where_keys)
     con.cursor().executemany(sql, parameters)
+
+
+def update_many(*args, **kwargs):
+    _update_many(*args, **kwargs)
+    transaction.commit_unless_managed()
 
 
 def insert_or_update_many(model, objects, keys=None, using="default"):
@@ -117,5 +127,6 @@ def insert_or_update_many(model, objects, keys=None, using="default"):
     update_objects = [o for (o, k) in object_keys if k in existing]
     insert_objects = [o for (o, k) in object_keys if k not in existing]
 
-    update_many(model, update_objects, keys=keys, using=using)
-    insert_many(model, insert_objects, using=using)
+    _update_many(model, update_objects, keys=keys, using=using)
+    _insert_many(model, insert_objects, using=using)
+    transaction.commit_unless_managed()
