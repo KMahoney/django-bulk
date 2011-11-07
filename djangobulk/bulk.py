@@ -20,12 +20,6 @@ def _prep_values(fields, obj, con):
 
 
 def _insert_many(model, objects, using="default"):
-    """
-    Insert list of Django objects in one SQL query. Objects must be of the same
-    Django model. Note that save is not called and signals on the model are not
-    raised.
-
-    """
     if not objects:
         return
 
@@ -43,17 +37,23 @@ def _insert_many(model, objects, using="default"):
 
 
 def insert_many(*args, **kwargs):
+    '''
+    Bulk insert list of Django objects. Objects must be of the same
+    Django model.
+
+    Note that save is not called and signals on the model are not
+    raised.
+
+    :param model: Django model class.
+    :param objects: List of objects of class `model`.
+    :param using: Database to use.
+
+    '''
     _insert_many(*args, **kwargs)
     transaction.commit_unless_managed()
 
 
 def _update_many(model, objects, keys=None, using="default"):
-    """
-    Update list of Django objects in one SQL query. Objects must be of the same
-    Django model. Note that save is not called and signals on the model are not
-    raised.
-
-    """
     if not objects:
         return
 
@@ -84,15 +84,35 @@ def _update_many(model, objects, keys=None, using="default"):
 
 
 def update_many(*args, **kwargs):
+    '''
+    Bulk update list of Django objects. Objects must be of the same
+    Django model.
+
+    Note that save is not called and signals on the model are not
+    raised.
+
+    :param model: Django model class.
+    :param objects: List of objects of class `model`.
+    :param keys: A list of field names to update on.
+    :param using: Database to use.
+
+    '''
     _update_many(*args, **kwargs)
     transaction.commit_unless_managed()
 
 
 def insert_or_update_many(model, objects, keys=None, using="default"):
     '''
-    Insert or update a list of Django objects.
+    Bulk insert or update a list of Django objects. This works by
+    first selecting each object's keys from the database. If an
+    object's keys already exist, update, otherwise insert.
 
     Does not work with SQLite as it does not support tuple comparison.
+
+    :param model: Django model class.
+    :param objects: List of objects of class `model`.
+    :param keys: A list of field names to update on.
+    :param using: Database to use.
 
     '''
     if not objects:
