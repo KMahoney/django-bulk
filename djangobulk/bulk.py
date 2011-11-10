@@ -101,6 +101,19 @@ def update_many(*args, **kwargs):
     transaction.commit_unless_managed()
 
 
+def _filter_objects(con, objects, key_fields):
+    '''Fitler out objects with duplicate key fields.'''
+    keyset = set()
+
+    # reverse = latest wins
+    for o in reversed(objects):
+        okeys = _prep_values(key_fields, o, con)
+        if okeys in keyset:
+            continue
+        keyset.add(okeys)
+        yield o
+
+
 def insert_or_update_many(model, objects, keys=None, using="default"):
     '''
     Bulk insert or update a list of Django objects. This works by
@@ -148,5 +161,9 @@ def insert_or_update_many(model, objects, keys=None, using="default"):
     insert_objects = [o for (o, k) in object_keys if k not in existing]
 
     _update_many(model, update_objects, keys=keys, using=using)
-    _insert_many(model, insert_objects, using=using)
+
+    # Filter out any duplicates in the insertion
+    filtered_objects = _filter_objects(con, insert_objects, key_fields)
+
+    _insert_many(model, filtered_objects, using=using)
     transaction.commit_unless_managed()

@@ -174,3 +174,14 @@ class InsertUpdateTest(TestCase):
         set2 = [TestModelA(a="Test", b=i, c=2) for i in range(500, 2000)]
         insert_or_update_many(TestModelA, set2, keys=['b'])
         self.assertEqual(2000, TestModelA.objects.all().count())
+
+    def test_duplicate_insert_update(self):
+        set1 = [
+            TestModelA(a="Test1", b=1, c=1),
+            TestModelA(a="Test2", b=2, c=2),
+            TestModelA(a="Test2", b=2, c=3),
+            ]
+
+        insert_or_update_many(TestModelA, set1, keys=['b'])
+        self.assertEqual(2, TestModelA.objects.all().count())
+        self.assertEqual(3, TestModelA.objects.get(a="Test2").c)
